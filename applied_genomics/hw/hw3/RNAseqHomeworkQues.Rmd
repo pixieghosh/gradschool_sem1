@@ -162,11 +162,13 @@ Create a heatmap of all the genes using the **pheatmap** package. Some options y
 - annotation_row ( color code the different genes based on the cluster they belong to)
 
 ```{r heatmap}
+library('pheatmap')
+pheatmap(readcount, scale = 'row', cluster_rows = TRUE, annotation_col= expgroup, annotation_row= clusters_df)
 
-#
 
 
 ```
+
 
 ### Step 11 (10pts)
 
@@ -183,8 +185,11 @@ BiocManager::install("org.Hs.eg.db")
 
 
 ```{r loadlibraries}
-
-#
+library('GOstats')
+library('Category')
+library("org.Hs.eg.db")
+library('annotate')
+library('GO.db')
 
 
 ```
@@ -192,8 +197,8 @@ BiocManager::install("org.Hs.eg.db")
 Now create a new **GOHyperGParams** object using the **new()** function and save it as variable called **params**. The **geneIds** is **diffexpgenes**. These should be the EntrezIDs we made into rownames in the beginning. The **universeGeneIds** is the rownames of **readcount**. The annotation is **org.Hs.eg** and the ontology we are going to use is **BP** with a pvaluecutoff of 0.001 and our testDirection is **over**.
 
 ```{r gostats}
+params = new('GOHyperGParams',geneIds = rownames(diffexpgenes_df), universeGeneIds = rownames(readcount), annotation = "org.Hs.eg.db", ontology = 'BP', pvalueCutoff = 0.001, testDirection = 'over')
 
-#
 
 
 ```
