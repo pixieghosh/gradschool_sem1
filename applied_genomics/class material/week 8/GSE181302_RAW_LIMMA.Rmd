@@ -1,0 +1,143 @@
+---
+title: "Project"
+author: "Manpreet S. Katari"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Loading the data
+
+```{r}
+GSM5494555_col.0.1_count <- read.delim("GSM5494555_col-0-1_count.txt", row.names=1)
+GSM5494556_col.0.1.2_count <- read.delim("GSM5494556_col-0-1-2_count.txt", row.names=1)
+GSM5494557_col.0.m_count <- read.delim("GSM5494557_col-0-m_count.txt", row.names=1)
+GSM5494558_col.0.m.2_count <- read.delim("GSM5494558_col-0-m-2_count.txt", row.names=1)
+GSM5494559_men1.1_count <- read.delim("GSM5494559_men1-1_count.txt", row.names=1)
+GSM5494560_men1.1.2_count <- read.delim("GSM5494560_men1-1-2_count.txt", row.names=1)
+GSM5494561_men1.m_count <- read.delim("GSM5494561_men1-m_count.txt", row.names=1)
+GSM5494562_men1.m.2_count <- read.delim("GSM5494562_men1-m-2_count.txt", row.names=1)
+
+```
+
+## merge the data into one dataframe
+
+```{r}
+col.0.1 = cbind(GSM5494555_col.0.1_count,GSM5494556_col.0.1.2_count)
+col.0.m = cbind(GSM5494557_col.0.m_count, GSM5494558_col.0.m.2_count)
+men1.1 = cbind(GSM5494559_men1.1_count, GSM5494560_men1.1.2_count)
+men1.m = cbind(GSM5494561_men1.m_count, GSM5494562_men1.m.2_count)
+
+col = cbind(col.0.1, col.0.m)
+men1 = cbind(men1.1, men1.m)
+
+data = cbind(col,men1)
+
+```
+
+```{r}
+column_names = names(data)
+genotype = c("col","col","col","col","men","men","men","men")
+treatment = c("control","control","mms","mms","control","control","mms","mms")
+coldata = data.frame(genotype = genotype, treatment = treatment)
+rownames(coldata) = column_names
+```
+
+
+
+```{r}
+library(limma)
+BiocManager::install("edgeR")
+library(edgeR)
+```
+
+```{r}
+dge = DGEList(counts = data)
+dim(dge$counts)
+```
+
+
+```{r}
+design.matrix = model.matrix(~genotype * treatment)
+design.matrix
+```
+
+```{r}
+?filterByExpr
+```
+
+```{r}
+keep = filterByExpr(dge, design.matrix)
+dge = dge[keep,,keep.lib.sizes=FALSE]
+```
+
+```{r}
+dim(dge$counts)
+```
+```{r}
+v = voom(dge, design.matrix, plot=TRUE, normalize="quantile")
+```
+
+```{r}
+fit = lmFit(v, design.matrix)
+fit = eBayes(fit)
+```
+
+```{r}
+topTableF(fit)
+```
+
+```{r}
+topTable(fit, coef=ncol(design.matrix))
+```
+
+```{r}
+plotMDS(v, labels=paste(genotype,treatment, sep="|"))
+```
+
+```{r}
+gentreat = factor(paste(genotype,treatment, sep=""))
+gentreat
+```
+
+```{r}
+design = model.matrix(~0+gentreat)
+design
+```
+
+```{r}
+nfit = lmFit(v,design)
+```
+
+
+```{r}
+newcontrasts = makeContrasts(g_in_c = mencontrol-colcontrol,
+                             g_in_mms = menmms - colmms,
+                             m_in_col = colmms - colcontrol,
+                             m_in_men = menmms - mencontrol,
+                             interact = (menmms - mencontrol) - (colmms - colcontrol), levels = gentreat)
+```
+
+```{r}
+newcontrasts
+```
+
+```{r}
+nfit2= contrasts.fit(nfit, newcontrasts)
+nfit2 = eBayes(nfit2)
+topTable(nfit2,  adjust="BH")
+```
+
+
+```{r}
+topTable(nfit2, coef = "g_in_c",  adjust="BH")
+
+```
+
+```{r}
+volcanoplot(nfit2, "g_in_c", highlight = 10)
+```
+

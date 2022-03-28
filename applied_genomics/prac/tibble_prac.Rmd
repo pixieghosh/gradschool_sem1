@@ -1,0 +1,29 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+```{r}
+df = as_tibble(read.csv('demographic.csv'))
+```
+
+```{r}
+tib = read_csv('demographic.csv')
+```
+```{r}
+write_csv(tib,'demographic2.csv')
+```
+
+```{r}
+tibble(a = c(1,2,3,4), b = c('a','b','c','d'), c = c(TRUE, FALSE, TRUE, FALSE))
+```
+```{r}
+tribble(~a, ~b, ~c, 1, 'a', TRUE, 2, 'b', FALSE, 3, 'c', TRUE, 4, 'd', FALSE)
+
+```
+
+
+

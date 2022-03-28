@@ -1,0 +1,74 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+mpg
+```
+
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = 'pink')) +
+geom_point() + geom_line()
+```
+
+
+```{r}
+ggplot(data = mpg) +
+geom_point(mapping = aes(x = displ, y = hwy, color = 'blue')) + geom_line(mapping = aes(x = displ, y = hwy, color = 'purple'))
+```
+```{r}
+ggplot(data = mpg) +
+geom_point(mapping = aes(x = displ, y = hwy), color = 'purple')
+```
+```{r}
+ggplot(data = mpg) +
+geom_point(mapping = aes(x = displ, y = hwy)) +
+facet_wrap(~ class + manufacturer, nrow = 2)
+```
+
+
+```{r}
+```
+
+
+```{r}
+ggplot(data = mpg) +
+geom_histogram(mapping = aes(x= hwy)) 
+```
+```{r}
+diamonds
+```
+```{r}
+ggplot(data = diamonds) +
+geom_bar(mapping = aes(x = cut, fill = cut))
+```
+```{r}
+ggplot(data = diamonds) +
+geom_bar(mapping = aes(x = cut, fill = clarity))
+```
+
+
+```{r}
+ggplot(data = diamonds) +
+geom_bar(
+mapping = aes(x = cut, fill = clarity),
+position = "fill"
+)
+```
+
+```{r}
+ggplot(data = mpg) +
+geom_point(mapping = aes(x = displ, y = hwy), color = 'purple', position = "jitter")
+```
+```{r}
+ggplot(data = mpg) +
+geom_point(mapping = aes(x = displ, y = hwy), color = 'purple', position = "jitter") + coord_flip()
+```
+

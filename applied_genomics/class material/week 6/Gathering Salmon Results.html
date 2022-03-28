@@ -1,0 +1,12 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body style="font-family: Verdana;font-size: 12pt;color: #494c4e;">
+<p>kcl1 &lt;- read.delim("KCL_SE_rep1/quant.sf")</p>
+<p>kcl2 &lt;- read.delim("KCL_SE_rep2/quant.sf")<br>no31 &lt;- read.delim("NO3_SE_rep1/quant.sf")</p>
+<p>no32 &lt;- read.delim("NO3_SE_rep2/quant.sf")</p>
+<p>allreads = data.frame(kcl1 = kcl1$NumReads,<br>kcl2 = kcl2$NumReads,<br>no31 = no31$NumReads,<br>no32 = no32$NumReads)</p>
+<p>rownames(allreads) = kcl1$Name</p>
+</body>
+</html>

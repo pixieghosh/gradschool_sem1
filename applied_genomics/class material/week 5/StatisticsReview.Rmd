@@ -1,0 +1,141 @@
+---
+title: "Statistics Review"
+output: html_notebook
+---
+
+Our dataset often is presented as a matrix, where each row is a different gene and each column is a different experiment.
+
+Let's create a random set of values for 20,000 genes and 12 experiments.
+
+- **sample()** function can be useful in generating random numbers give a range. 
+
+- this gives us a *unif* distribution
+
+```{r}
+sampleData = sample(200:2000, 20000*12, replace=T)
+hist(sampleData)
+```
+
+But if we want data to be from normal distribution we should use **rnorm**.
+
+```{r}
+randomData = rnorm(20000*12)
+hist(randomData)
+```
+
+```{r}
+expvalues = matrix(randomData, ncol=12, nrow=20000)
+```
+
+Let's suppose the first 6 values are from a *wildtype* *c.elegans* and the last 6 are from *mutant*.
+
+For each genes, what statistical method can I use to determine if the gene is differentially expressed. DE means - means of a gene in the two conditions are significantly different.
+
+- we can use either t-test or ANOVA.
+
+```{r}
+genotype = as.factor(rep(c("w","m"), each=6))
+genotype
+```
+
+```{r}
+aovsum = summary(aov(expvalues[1,] ~ genotype))
+
+# to get the p-value for each anova result use command below
+aovsum[[1]]$`Pr(>F)`[1]
+
+```
+```{r}
+boxplot(expvalues[1,] ~ genotype)
+```
+
+```{r}
+pvalues = numeric()
+for (i in 1:nrow(expvalues)) {
+  
+  aovsum_temp = summary(aov(expvalues[i,] ~ genotype))
+
+# to get the p-value for each anova result use command below
+  pvalues[i] = aovsum_temp[[1]]$`Pr(>F)`[1]
+}
+```
+
+```{r}
+hist(pvalues)
+```
+```{r}
+sig_gene_logic = pvalues < 0.05
+```
+
+```{r}
+sum(sig_gene_logic)
+```
+need to correct for multiple hypothesis testing using FDR as cutoff and not just p-value.
+
+```{r}
+p_adj = p.adjust(pvalues, method="fdr")
+```
+
+
+```{r}
+sum(p_adj < 0.05)
+```
+Alternativaly we can adjust for the FWER using Bonferroni
+
+
+```{r}
+b_adj = p.adjust(pvalues, method="bonferroni")
+sum(b_adj < 0.05)
+```
+
+To do a 2-factor ANOVA, we need two factors.
+Let's assume that the 1-3, 7-9 are **control** and 4-6, 10-12 are **treatment**
+
+```{r}
+treatment = factor(rep(rep(c('c','t'), each=3),2))
+treatment
+```
+
+
+```{r}
+
+aovsum = summary(aov(expvalues[3,] ~ genotype * treatment))
+aovsum
+```
+```{r}
+boxplot(expvalues[3,] ~ genotype * treatment)
+```
+
+```{r}
+# to get the p-value for each anova result use command below
+aovsum[[1]]$`Pr(>F)`[1:3]
+
+```
+
+```{r}
+interactionpvalues = matrix(NA,nrow=nrow(expvalues),ncol=3)
+
+for (i in 1:nrow(expvalues)) {
+  
+  aovsum_temp = summary(aov(expvalues[i,] ~ genotype * treatment))
+  #print(aovsum_temp)
+# to get the p-value for each anova result use command below
+  interactionpvalues[i,] = aovsum_temp[[1]]$`Pr(>F)`[1:3]
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

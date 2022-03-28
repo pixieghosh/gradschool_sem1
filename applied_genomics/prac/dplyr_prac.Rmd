@@ -1,0 +1,32 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+
+```{r}
+flights
+```
+```{r}
+filter(flights, dep_time > 550 & dep_delay < 0)
+```
+```{r}
+arrange(filter(select(flights, starts_with('dep')), dep_time > 550),desc(dep_time))
+```
+```{r}
+var = flights %>% select(starts_with('dep')) %>% filter(dep_time > 550) %>% arrange(desc(dep_time)) %>% mutate(dep2 = dep_delay*2)
+```
+
+```{r}
+by_day <- group_by(flights, year, month, day)
+summary <- summarize(by_day, delay = sum(dep_delay, na.rm = TRUE))
+```
+
+

@@ -1,0 +1,198 @@
+---
+title: "R review week 5"
+output: html_notebook
+---
+
+# R review
+
+Review of R data types and functions.
+
+## R Data types
+
+### Vectors
+
+Basic type of data in R. Some of the main features of vectors:
+
+- store numbers and characters in one dimension.
+- can only store same type of data. If you try to mix it may not warn you and simply pick a type like character.
+- use **c()** to create a vector
+
+
+```{r}
+a = c(1,2,3)
+b = c("a","b","c")
+c = c(a,b)
+c
+```
+#### Logical vectors
+
+```{r}
+filter = c(T,T,F)
+a < 2
+```
+To get the position where the vector is T you can use the **which()** command.
+
+```{r}
+which(filter)
+```
+```{r}
+which(a<2)
+```
+#### How to get and set values in vector?
+
+To get a value from a vector you can specify :
+
+- indices,
+- range of indices
+- names
+- logical vector which returns all indices are T
+
+```{r}
+a[3]
+```
+```{r}
+a[2:3]
+```
+```{r}
+names(a) = c("apple","banana","orange")
+```
+
+```{r}
+a["apple"]
+```
+
+```{r}
+a[filter]
+```
+
+
+### Matrix
+
+Some properties:
+
+- 2 dimensional array
+- same type, can be either all numeric, character, or even logical
+- can be created using **matrix()** command.
+
+```{r}
+mat = matrix(1:20, nrow=5, ncol=4)
+mat
+```
+```{r}
+mat[2,]
+```
+```{r}
+mat[2,2]
+```
+#### Matrix have names as well
+
+```{r}
+colnames(mat) = c("a","b","c","d")
+rownames(mat) = c("g1","g2","g3","g4","g5")
+mat
+```
+```{r}
+mat["g2",]
+```
+```{r}
+mat[c(T,T,F,T,F),]
+```
+#### Specials functions for Matrix
+
+```{r}
+colSums(mat)
+```
+
+```{r}
+rowSums(mat)
+```
+```{r}
+mat[rowSums(mat) > 40,]
+```
+
+##### cbind() and rbind() to create new matrix
+```{r}
+a2 = 7:9
+a_mat = cbind(a,a2)
+a_mat
+```
+```{r}
+a_mat_2 = rbind(a,a2)
+a_mat_2
+```
+
+
+### Data frames
+
+Some features of a dataframe
+
+- 2 dimension
+- more than one type, but they must be column-wise.
+- shares some functions as matrix
+- columns can also be referred using *$*
+- when you select a column, the result is a vector
+- when you select a row, the result is a data frame.
+
+```{r}
+adf = data.frame(a=a,b=b,a2=a2)
+adf
+```
+
+```{r}
+adf["apple","b"]
+```
+```{r}
+class(adf$b)
+```
+```{r}
+class(adf["apple",])
+```
+##### converting data frame to matrix
+
+make sure the columns you select are of same type
+
+```{r}
+as.matrix(adf[,c(1,3)])
+```
+##### converting  matrix to data frame 
+
+```{r}
+as.data.frame(mat)
+```
+
+#### Lists
+
+Lists are useful in creating an object where different types of data can be linked.
+
+Some features of lists:
+
+- one dimensional
+- each element can be of any size
+- access named elements using *$*
+- access unnamed elements using *[[]]*
+
+```{r}
+alist = list(a =a, b= b, c = c, a2)
+```
+
+
+```{r}
+alist$a
+```
+
+```{r}
+alist[[4]]
+```
+```{r}
+homework = list(netid='msk8',
+                grade=70,
+                result = matrix(10,2,5))
+```
+
+```{r}
+homework$netid
+```
+```{r}
+homework$result
+```
+

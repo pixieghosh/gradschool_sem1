@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head>
+</head>
+<body style="font-family: Verdana;font-size: 12pt;color: #494c4e;">
+<h1 style="line-height: 1.39356; margin-top: 0pt; margin-bottom: 27pt;"><strong><span style="font-size: 23.5pt; font-family: 'Times New Roman'; color: #333333;">Linux Exercise</span></strong></h1>
+<ol style="margin-top: 0px; margin-bottom: 0px; padding-inline-start: 48px;">
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Download the file to your computer from the following url </span><a style="text-decoration: none;" href="https://drive.google.com/a/nyu.edu/file/d/0B172nc4dAaaOZ21neFZCRFFPcWs/view?usp=sharing"><span style="font-size: 11.5pt; color: #1155cc; text-decoration: underline; text-decoration-skip-ink: none;">Mesculenta_147_gene.gff3.gz</span></a></p>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Log into greene.hpc.nyu.edu.</span></p>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Create a directory on greene.hpc.nyu.edu called </span><strong><span style="font-size: 11.5pt;">LinuxExercise</span></strong></p>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Transfer the file Mesculenta_147_gene.gff3.gz to your new directory</span></p>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Use</span><strong><span style="font-size: 11.5pt;"> gunzip</span></strong><span style="font-size: 11.5pt;"> to uncompress the file.</span></p>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">R</span><strong><span style="font-size: 11.5pt;">ename</span></strong><span style="font-size: 11.5pt;"> the file to : Cassavagenes.txt</span></p>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Use the </span><strong><span style="font-size: 11.5pt;">head </span></strong><span style="font-size: 11.5pt;">command to look at the first 20 lines of Cassavagenes.txt</span></p>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Determine the number of different types of features</span><strong><span style="font-size: 11.5pt;"> </span></strong><span style="font-size: 11.5pt;">that</span><strong><span style="font-size: 11.5pt;"> </span></strong><span style="font-size: 11.5pt;">are present in the file.</span></p>
+<ol style="padding-inline-start: 48px;">
+<li style="list-style-type: lower-alpha; font-size: 11pt; font-family: Arial; color: #000000;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">Hint – use the </span><strong><span style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">cut</span></strong><span style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;"> function to select the column with features.</span></p>
+</li>
+<li style="list-style-type: lower-alpha; font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Hint - You can use the </span><strong><span style="font-size: 11.5pt;">uniq</span></strong><span style="font-size: 11.5pt;"> function but first you must </span><strong><span style="font-size: 11.5pt;">sort</span></strong><span style="font-size: 11.5pt;"> it.</span></p>
+</li>
+</ol>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">Save the rows that contain the word “gene” as a separate file. Call the new file “</span><strong><span style="font-size: 11.5pt;">Genes.txt</span></strong><span style="font-size: 11.5pt;">”</span></p>
+<ol style="padding-inline-start: 48px;">
+<li style="list-style-type: lower-alpha; font-size: 11pt; font-family: Arial; color: #000000;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">Hint - use the </span><strong><span style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">grep</span></strong><span style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;"> command to search for pattern “gene”</span></p>
+</li>
+</ol>
+</li>
+<li style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">
+<p style="margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11.5pt;">How many genes are in </span><strong><span style="font-size: 11.5pt;">Genes.txt</span></strong><span style="font-size: 11.5pt;"> ?&nbsp;</span></p>
+<ol style="padding-inline-start: 48px;">
+<li style="list-style-type: lower-alpha; font-size: 11pt; font-family: Arial; color: #000000;">
+<p style="margin-top: 0pt; margin-bottom: 36pt;"><span style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">Hint – count the number of lines using </span><strong><span style="font-size: 11.5pt; font-family: 'Times New Roman'; color: #333333;">wc.</span></strong></p>
+</li>
+</ol>
+</li>
+</ol>
+</body></html>

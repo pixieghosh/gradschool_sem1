@@ -1,0 +1,168 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head></head><body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+RNAseqHW
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div>
+
+
+
+<h1 class="title toc-ignore">RNAseqHW</h1>
+<h4 class="author">Manpreet S. Katari</h4>
+
+</div>
+
+
+<div class="section level3">
+<h3>Data source</h3>
+<p>The data was downloaded from NCBI GEO (<a rel="noopener" href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE124548">GSE124548</a>). The study looks at the affect of a drug (Lumacaftor/Ivacaftor) to treat cystic fibrosis ( CF ). This drug has been approved for individuals that are homozygous for CFTR ( Cystic fibrosis transmembrane conductance regulator ) mutation. Clinical studies have observed that there is a large variation in the response thus the researchers are looking at RNA expressions to help identify the cause of this variation. Blood samples were taken from : - 20 healthy patients ( do not have CF ) - 20 patients that CF ( before treatment ) - 20 patients that have CF ( after treatment - these are paired with those before treatment)</p>
+<p>I have extracted the raw read counts from the original matrix and provided it with the homework. The healthy patients have “HC” in their names, CF patients before treatment are labeled “Base” and after treatment are labeled “V2”.</p>
+<p>For the homework we will compare the HC with Base to do a simple unpaired differentially expression.</p>
+</div>
+<div class="section level3">
+<h3>Step 1 (5pts)</h3>
+<p>Load the file <strong>GSE124548.raw.txt</strong> and create a new dataframe with just the columns with the raw counts for healthy (HC) and CF patients before treatment (Base) and call it <strong>readcount</strong>. Use the <em>third</em> column (EntrezID) in the original file as the rownames of readcount.</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 2 (5pts)</h3>
+<p>Create a dataframe, called <strong>expgroup</strong>, with one column, labeled <strong>condition</strong>, that correctly assigns which column is healthy and which is CF. Use the column names of readount as rownames of expgroup.</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 3 (5pts)</h3>
+<p>Load the Deseq2 package ( install if necessary ) and create a Counts Dataset Matrix using the command <strong>DESeqDataSetFromMatrix()</strong> and call it <strong>cds</strong>.</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 4 (5pts)</h3>
+<p>Use the functions <strong>estimateSizeFactors</strong> and <strong>estimateDispersions</strong> so that Deseq2 can correct for size of library and estimates the dispersion. Plot the dispersion using <strong>plotDispEsts</strong>. What does the graph tell you?</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 5 (5pts)</h3>
+<p>Perform the Differential expression and obtain the results using <strong>DESeq</strong> and <strong>results</strong> functions.</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 6 (5pts)</h3>
+<p>How many genes have an adjusted p-value of less than 0.05 and log2FoldChange greater than 1 or less than -1 ? Save this list of genes as <strong>diffexpgenes</strong></p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 7 (5pts)</h3>
+<p>Get the normalized values of the counts data in cds using the counts() function with option normalized=T and call this normvalues.</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 8 (5pts)</h3>
+<p>Create a new matrix or dataframe that contains the expression values from normvalues for just the diffexpgenes and call it diffexpvalues.</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 9 (10pts)</h3>
+<p>Cluster the differentially expressed genes using hierarchical clustering and use the cutree function to create 8 groups. How many genes are in each group?</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 10 (10pts)</h3>
+<p>Create a heatmap of all the genes using the <strong>pheatmap</strong> package. Some options you should pay attention to are: - scale ( scaling gene values shows expression pattern changes rather than magnitude) - cluster_rows ( define how the rows should be clustered) - annotation_col ( color code the different samples based on a category- health or cf) - annotation_row ( color code the different genes based on the cluster they belong to)</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 11 (10pts)</h3>
+<p>Use the GOstats package to determing which GO-terms are enriched in <strong>diffexpgenes</strong>. To do this you will need to install the following packages from Bioconductor:</p>
+<pre class="r"><code>BiocManager::install(&quot;GOstats&quot;)
+BiocManager::install(&quot;GO.db&quot;)
+BiocManager::install(&quot;Category&quot;)
+BiocManager::install(&quot;org.Hs.eg.db&quot;)</code></pre>
+<pre class="r"><code>#</code></pre>
+<p>Now create a new <strong>GOHyperGParams</strong> object using the <strong>new()</strong> function and save it as variable called <strong>params</strong>. The <strong>geneIds</strong> is <strong>diffexpgenes</strong>. These should be the EntrezIDs we made into rownames in the beginning. The <strong>universeGeneIds</strong> is the rownames of <strong>readcount</strong>. The annotation is <strong>org.Hs.eg</strong> and the ontology we are going to use is <strong>BP</strong> with a pvaluecutoff of 0.001 and our testDirection is <strong>over</strong>.</p>
+<pre class="r"><code>#</code></pre>
+</div>
+<div class="section level3">
+<h3>Step 12 (5pts)</h3>
+<p>What conclusions can you make about your analysis?</p>
+<pre><code>
+#
+</code></pre>
+</div>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" src="/d2l/common/math/MathML.js?v=20.22.3.35882 "></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() { D2LMathML.DesktopInit('https://s.brightspace.com/lib/mathjax/2.7.4/MathJax.js?config=MML_HTMLorMML','https://s.brightspace.com/lib/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML','130',true); });</script></body></html>
