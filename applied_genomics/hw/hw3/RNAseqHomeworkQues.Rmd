@@ -62,10 +62,6 @@ Load the Deseq2 package ( install if necessary ) and create a Counts Dataset Mat
 library('DESeq2')
 cds = DESeqDataSetFromMatrix(design= ~ condition_vec, countData = readcount, colData = expgroup)
 
-
-#dds <- DESeqDataSetFromMatrix(countData = data, colData = coldata, design= ~ genotype + treatment + genotype:treatment)
-
-
 ```
 
 ### Step 4 (5pts)
@@ -78,7 +74,8 @@ Use the functions **estimateSizeFactors** and **estimateDispersions** so that De
 cds = estimateSizeFactors(cds)
 cds = estimateDispersions(cds)
 plotDispEsts(cds)
-#
+#The graph shows an even, high dispersion indicating small mean counts and that 
+#the data is a good fit for the model
 
 ```
 
@@ -117,8 +114,6 @@ option normalized=T and call this normvalues.
 
 ```{r normvalues}
 normvalues = counts(cds,normalized=TRUE)
-#
-
 
 ```
 
@@ -130,8 +125,6 @@ the diffexpgenes and call it diffexpvalues.
 ```{r diffvalues}
 diffexpgenes_df = as.data.frame(diffexpgenes)
 diffexpvalues = normvalues[rownames(normvalues) %in% rownames(diffexpgenes_df), ] 
-
-#
 
 
 ```
@@ -148,8 +141,8 @@ clusters = cutree(tree,k = 8)
 clusters_df = as.data.frame(clusters)
 
 group_by(clusters_df, clusters) %>% summarize(count=n()) 
-#
-
+# 184 in group 1, 1 in group 2, 3 in group 3, 16 in group 4, 1 in group 5, 
+# 2 in group 6, 1 in groups 7 and 8.
 
 ```
 
@@ -165,8 +158,6 @@ Create a heatmap of all the genes using the **pheatmap** package. Some options y
 library('pheatmap')
 pheatmap(readcount, scale = 'row', cluster_rows = TRUE, annotation_col= expgroup, annotation_row= clusters_df)
 
-
-
 ```
 
 
@@ -180,7 +171,6 @@ BiocManager::install("GO.db")
 BiocManager::install("Category")
 BiocManager::install("org.Hs.eg.db")
 
-
 ```
 
 
@@ -191,15 +181,13 @@ library("org.Hs.eg.db")
 library('annotate')
 library('GO.db')
 
-
 ```
 
 Now create a new **GOHyperGParams** object using the **new()** function and save it as variable called **params**. The **geneIds** is **diffexpgenes**. These should be the EntrezIDs we made into rownames in the beginning. The **universeGeneIds** is the rownames of **readcount**. The annotation is **org.Hs.eg** and the ontology we are going to use is **BP** with a pvaluecutoff of 0.001 and our testDirection is **over**.
 
 ```{r gostats}
 params = new('GOHyperGParams',geneIds = rownames(diffexpgenes_df), universeGeneIds = rownames(readcount), annotation = "org.Hs.eg.db", ontology = 'BP', pvalueCutoff = 0.001, testDirection = 'over')
-
-
+summary(hyperGTest(params))
 
 ```
 
@@ -208,7 +196,14 @@ params = new('GOHyperGParams',geneIds = rownames(diffexpgenes_df), universeGeneI
 What conclusions can you make about your analysis?
 
 ```
-
-#
+Based on my analysis of the plot dispersion graph I can conclude that the genes 
+with a p value less than 0.001 are all immune system/defense genes. This could 
+be because these are important genes when a person has CF. The healthy 
+genes are more down regulated then the CF genes, which are slightly up 
+regulated. It can also be seen that the number of values with a p value less than 
+0.05 and log2FoldChange greater than 1 or less than -1 is much less than the 
+original number of values, indicating few samples with significance. There are 
+also many more genes in groups 1 and 4 in the hierarchical clustering when 
+compared to any other group. 
 
 ```
