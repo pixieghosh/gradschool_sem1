@@ -52,6 +52,7 @@ for (line in colnames)
   }
 }
 expgroup = data.frame(condition_vec,row.names = colnames)
+head(expgroup) 
 ```
 
 ### Step 3 (5pts)
