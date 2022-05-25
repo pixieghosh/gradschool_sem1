@@ -1,0 +1,387 @@
+---
+title: "limma"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r eval=F}
+# loading libraries
+library(edgeR)
+library(limma)
+library(dplyr)
+```
+
+```{r}
+# storing the count data obtained by salmon in a variable
+data = tx.salmon$counts
+#dim(data)
+```
+
+
+```{r}
+# creating DGE object using egdeT
+DGE = DGEList(counts=data)
+dim(DGE)
+```
+
+```{r}
+# loading sample information
+info = read.table("info.tsv", sep = '\t', header=T)
+head(info)
+```
+
+```{r}
+shock = substr(info$Col_names, 1, nchar(info$Col_names)-6)
+shock
+```
+
+```{r}
+time = substr(info$Col_names, nchar(info$Col_names)-1, nchar(info$Col_names))
+time
+```
+
+```{r}
+group = interaction(shock,time)
+group
+```
+
+```{r}
+grp = as.data.frame(rbind(shock,time))
+grp = as.data.frame(t(grp))
+head(grp)
+rownames(grp) = rownames(group)
+```
+
+```{r}
+# creating the design matrix
+design.matrix = model.matrix(~0+group)
+design.matrix
+```
+```{r}
+# filtering lowly expressed genes
+keep = filterByExpr(DGE, design.matrix)
+DGE = DGE[keep,,keep.lib.sizes=FALSE]
+```
+
+
+```{r}
+dim(DGE$counts)
+```
+
+## Voom: Limma
+```{r}
+#jpeg("voom.jpg")
+v = voom(DGE, design.matrix, plot=TRUE, normalize="quantile")
+#dev.off()
+```
+
+```{r}
+# fitting our design matrix to linear model
+fit = lmFit(v, design.matrix)
+
+# emperical bayes of fitted contrast
+fit = eBayes(fit)
+```
+
+```{r}
+dim(fit)
+```
+
+
+```{r}
+#head(fit)
+```
+
+
+```{r}
+# top table of differentially expressed genes 
+top.table = topTable(fit, adjust.method = "BH", sort.by = "none", n = Inf)
+head(top.table, 20)
+```
+
+```{r}
+dim(top.table)
+```
+
+
+```{r}
+#topTable(fit, coef=ncol(design.matrix))
+```
+
+
+```{r}
+# plotting MDS to see the how the groups are clustering
+
+#jpeg("mds.jpg")
+plotMDS(v, labels=paste(shock,time, sep="|"))
+#dev.off()
+```
+
+### 1) testing within shock groups at different time points
+```{r}
+contrasts_times = makeContrasts(CST2_T1 = groupCS.T2 - groupCS.T1,
+                          CST3_T1 = groupCS.T3 - groupCS.T1,
+                          CST3_T2 = groupCS.T3 - groupCS.T2,
+                          SST2_T1 = groupSS.T2 - groupSS.T1,
+                          SST3_T1 = groupSS.T3 - groupSS.T1,
+                          SST3_T2 = groupSS.T3 - groupSS.T2,
+                          levels = colnames(fit))
+
+contrasts_times
+```
+
+```{r}
+# fitting the contrast for within time groups
+fit4= contrasts.fit(fit, contrasts_times)
+```
+
+```{r}
+fit4 = eBayes(fit4)
+
+top.table4 = topTable(fit4,  adjust="BH", n=Inf)
+head(top.table4, 20)
+```
+
+We did not observe any signifcant genes with adjusted p.value < 0.05 
+
+### 2) between shock groups at same time points
+```{r}
+contrasts = makeContrasts(T_1 = groupCS.T1 - groupSS.T1,
+                          T_2 = groupCS.T2 - groupSS.T2,
+                          T_3 = groupCS.T3 - groupSS.T3,
+                          levels = colnames(fit))
+
+contrasts
+```
+
+
+```{r}
+fit3= contrasts.fit(fit, contrasts)
+```
+
+```{r}
+# emperical bayes of fitted contrast
+fit3 = eBayes(fit3)
+top.table3 = topTable(fit3,  adjust="BH", n=Inf)
+head(top.table3, 100)
+```
+```{r}
+length(which(top.table3$adj.P.Val < 0.05))
+```
+
+
+```{r}
+length(which(top.table3$adj.P.Val < 0.01))
+```
+
+```{r}
+volcanoplot(fit3, "T_3", highlight = 10)
+```
+
+We observed 461 genes with adjusted p.value < 0.05 and 140 genes with adjusted 
+p. value < 0.01
+
+
+```{r}
+# checking for upregulated and down regulated genes
+summary(decideTests(fit3))
+```
+
+
+
+```{r}
+# subset of differentially expressed genes which are significant 
+# at adj.P.val < 0.05
+diffexpgenes = subset(top.table3, adj.P.Val < 0.05)
+```
+
+```{r}
+# normalization of counts using Counts Per Million function
+nc <- cpm(DGE, normalized.lib.sizes=FALSE)
+```
+
+```{r}
+# subset of diff. genes based on  normalized counts
+diffexpgenes_df = as.data.frame(diffexpgenes)
+diffexpvalues = nc[rownames(nc) %in% rownames(diffexpgenes_df), ]
+```
+
+
+```{r}
+colnames(diffexpvalues) = info$Sample.ID
+#head(diffexpvalues)
+```
+
+```{r}
+group = as.data.frame(group)
+```
+
+### Hierarchical clustering
+```{r}
+dist = dist(diffexpgenes_df)
+tree = hclust(dist)
+clusters = cutree(tree,k = 8)
+clusters_df = as.data.frame(clusters)
+
+group_by(clusters_df, clusters) %>% summarize(count=n()) 
+```
+
+
+```{r}
+readcount = tx.salmon$counts
+colnames(readcount) = info$Sample.ID
+#head(readcount)
+```
+
+```{r}
+group = as.data.frame(group)
+```
+
+```{r}
+expgroup = as.data.frame(colnames(diffexpvalues))
+dim(expgroup)
+```
+```{r}
+rownames(grp) = rownames(expgroup)
+dim(grp)
+```
+
+
+```{r}
+expgroup$shock_group = c(shock)
+rownames(expgroup) = expgroup$`colnames(diffexpvalues)`
+expgroup$`colnames(diffexpvalues)`<- NULL
+#head(expgroup)
+```
+
+
+```{r eval=F}
+#library('pheatmap')
+#pheatmap(diffexpvalues, scale = 'row', cluster_rows = TRUE, annotation_col= expgroup, annotation_row= clusters_df)
+```
+
+## pearson's correlation
+```{r}
+# Pairwise correlation between samples (columns)
+cols.cor <- cor(diffexpvalues, use = "pairwise.complete.obs", method = "pearson")
+# Pairwise correlation between rows (genes)
+rows.cor <- cor(t(diffexpvalues), use = "pairwise.complete.obs", method = "pearson")
+
+# Plot the heatmap
+library("pheatmap")
+
+#jpeg("pheatmap.jpg")
+
+pheatmap(
+  diffexpvalues, scale = "row", 
+  clustering_distance_cols = as.dist(1 - cols.cor),
+  clustering_distance_rows = as.dist(1 - rows.cor),
+  cluster_rows = TRUE, 
+  annotation_col= grp, 
+  annotation_row= clusters_df,
+  show_rownames = F
+  )
+
+#dev.off()
+
+```
+
+```{r}
+head(clusters_df)
+```
+
+### GO term analysis for differentially expressed genes between shock groups
+
+```{r eval=F}
+library('GOstats')
+library('Category')
+library("org.Hs.eg.db")
+library('annotate')
+library('GO.db')
+```
+
+
+
+```{r}
+# creating a list of parameters to be used in hyperGtest 
+params = new('GOHyperGParams',
+             geneIds = diff_genes$`NCBI gene (formerly Entrezgene) ID`, 
+             universeGeneIds = data_genes$`NCBI gene (formerly Entrezgene) ID`, 
+             annotation = "org.Hs.eg.db", 
+             ontology = 'BP', 
+             pvalueCutoff = 0.001, 
+             testDirection = 'over')
+
+# creating hypergeometric object
+overBP = (hyperGTest(params))
+```
+
+```{r}
+summary(overBP)
+```
+```{r}
+goDag(overBP)
+```
+
+```{r}
+length(overBP@geneIds)
+```
+
+```{r}
+# fetching gene IDs for GO Ids
+GO_genes = geneIdsByCategory(overBP)
+GO0002376 = GO_genes$`GO:0002376`
+GO0002376 = na.omit(GO0002376)
+GO0002376 = as.character(GO0002376)
+```
+
+```{r}
+GO0002376_ids = getSYMBOL(GO0006334, data='org.Hs.eg')
+```
+
+```{r}
+GO0006334.s = GO_genes$`GO:0006334`
+GO0006334.s = na.omit(GO0006334.s)
+GO0006334.s = as.character(GO0006334.s)
+GO0006334.s_ids = getSYMBOL(GO0006334.s, data='org.Hs.eg')
+```
+
+```{r}
+GO0006959 = GO_genes$`GO:0006959`
+GO0006959 = na.omit(GO0006959)
+GO0006959 = as.character(GO0006959)
+GO0006959_ids = getSYMBOL(GO0006959, data='org.Hs.eg')
+GO0006959_ids
+```
+
+```{r}
+# GO analysis using goana() of limma
+g = goana(rownames(fit3), coef=3, species="Hs", geneid = "EnsembleID")
+topGO(g, ontology = "BP")
+```
+
+
+```{r}
+colnames(fit3)
+```
+
+
+```{r}
+head(top.table3)
+```
+
+```{r}
+topTable(fit3, coef=3, n=Inf)
+```
+
+```{r}
+# venn diagram representing the results of up and down genes 
+res_s = decideTests(fit3)
+vennDiagram(res_s, include = c("up", "down"))
+summary(res_s)
+
+```
+

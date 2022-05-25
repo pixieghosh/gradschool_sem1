@@ -1,0 +1,108 @@
+---
+title: "RandomForest"
+author: "Manpreet S. Katari"
+date: "April 4, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+mydata<-read.table("all.15k.patients.txt", header=T)
+specific_data = mydata[,c("alivestatus","grade","nodespos","nodesexam","size","pgr","er")]
+head(specific_data)
+
+```
+
+```{r}
+specific_data$alivestatus = as.factor(specific_data$alivestatus)
+
+```
+
+
+```{r}
+#install.packages("randomForest")
+
+library(randomForest)
+```
+
+```{r}
+datarf = randomForest(alivestatus ~ ., data=specific_data, importance=T, mtry=3)
+
+
+plot(datarf, xlim=c(0,50))
+varImpPlot(datarf)
+
+```
+
+```{r}
+library(AUC)
+
+rfroc = roc(datarf$votes[,2],specific_data$alivestatus )
+
+auc(rfroc)
+
+plot(rfroc)
+
+#create plot using ggplot
+```
+
+```{r}
+library("party")
+library(AUC)
+
+```
+
+```{r}
+dataparty2.rf = cforest(alivestatus ~ grade + nodespos + nodesexam + size + pgr + er, 
+                       data=specific_data, controls=cforest_unbiased(ntree=100,mtry=2))
+
+dataparty2.rf.results.prob = predict(dataparty2.rf, OOB = T,type="prob")
+```
+
+
+```{r}
+
+newmatrix = do.call("rbind",dataparty2.rf.results.prob)
+
+library(plyr)
+newmatrix2 = ldply(dataparty2.rf.results.prob, data.frame,
+                   .id="patient")
+
+auc(roc(newmatrix[,2],specific_data$alivestatus))
+
+```
+
+
+```{r}
+dataparty3.rf = cforest(alivestatus ~ grade + nodespos + nodesexam + size + pgr + er, 
+                       data=specific_data,
+                       controls=cforest_unbiased(ntree=100,mtry=3))
+
+dataparty3.rf.results.prob = predict(dataparty3.rf, OOB = T,type="prob")
+
+
+predictions = do.call("rbind",dataparty3.rf.results.prob)
+
+auc(roc(predictions[,2],specific_data$alivestatus))
+
+
+```
+
+
+```{r}
+dataparty4.rf = cforest(alivestatus ~ grade + nodespos + nodesexam + size + pgr + er, 
+                       data=specific_data,
+                       controls=cforest_unbiased(ntree=100,mtry=4))
+
+dataparty4.rf.results.prob = predict(dataparty4.rf, OOB = T,type="prob")
+
+
+predictions = do.call("rbind",dataparty4.rf.results.prob)
+
+auc(roc(predictions[,2],specific_data$alivestatus))
+
+
+```

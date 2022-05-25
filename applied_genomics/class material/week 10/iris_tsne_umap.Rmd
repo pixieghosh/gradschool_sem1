@@ -1,0 +1,88 @@
+---
+title: "Untitled"
+author: "Manpreet S. Katari"
+date: "4/6/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+head(iris)
+```
+
+## Scale and center iris dataset ( column by column)
+
+```{r}
+iris_scaled = scale(as.matrix(iris[,1:4]))
+
+head(iris_scaled)
+```
+
+
+## Cluster the different plants ( 150 in rows ) into 3 groups using **hclust**
+
+```{r}
+iris_hclust = hclust(dist(iris_scaled), method="ave")
+plot(iris_hclust, labels = iris$Species)
+```
+
+## PCA plot of the iris
+
+
+```{r}
+iris_pca = prcomp(iris_scaled, scale=T, center=T)
+library(dplyr)
+library(ggplot2)
+coords2draw = as.data.frame(iris_pca$x)
+coords2draw$Species = iris$Species
+
+ggplot(coords2draw) +
+  geom_point(mapping=aes(x = PC1, y= PC2, 
+                         col=Species))
+```
+
+```{r}
+ggplot(coords2draw) +
+  geom_point(mapping=aes(x = PC2, y= PC3, 
+                         col=Species))
+
+```
+
+
+
+## tSNE
+
+```{r}
+#BiocManager::install("M3C")
+
+library("M3C")
+
+```
+
+```{r}
+tsne(iris_scaled, labels = iris$Species, perplex = 2)
+```
+
+```{r}
+tsne(t(iris_scaled), labels = iris$Species, perplex = 2)
+```
+
+
+```{r}
+iris_scaled_uniq = iris_scaled[!duplicated(iris_scaled),]
+species_uniq = iris$Species[!duplicated(iris_scaled)]
+
+tsne(t(iris_scaled_uniq), labels = species_uniq, perplex=30)
+```
+
+
+## UMAP
+
+```{r}
+umap(t(iris_scaled_uniq), labels = species_uniq, )
+
+```
+

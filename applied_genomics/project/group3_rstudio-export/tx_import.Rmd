@@ -1,0 +1,68 @@
+---
+title: "Untitled"
+author: "Chandana"
+date: "4/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tximport)
+```
+
+```{r}
+# loading the table containing paths to directories of quant.sf files
+data = as.data.frame(read.table(file="tximport_table.csv", sep=',', header = T)) 
+data
+```
+
+```{r}
+library(GenomicFeatures)
+```
+
+
+```{r}
+# creating TxDb object and fetching gene IDs for corresponding transcript IDs
+TxDb <- makeTxDbFromGFF(file = "/scratch/work/courses/AppliedGenomicsSec3/groups/group3/gencode.v40.annotation.gtf.gz")
+k <- keys(TxDb, keytype = "TXNAME")
+tx2gene <- select(TxDb, k, "GENEID", "TXNAME")
+head(tx2gene)
+```
+```{r}
+files = file.path(data$files, "quant.sf")
+```
+
+```{r}
+# importing numReads from quant.sf files of Salmon
+tx.salmon = tximport(files, type = "salmon", tx2gene = tx2gene,
+                     ignoreAfterBar=T)
+```
+```{r}
+dim(data)
+```
+
+
+```{r}
+#summary(tx.salmon)
+```
+
+```{r}
+# creating a matrix of count data
+countsMat = as.matrix(tx.salmon$counts)
+abundanceMat = as.matrix(tx.salmon$abundance)
+lengthMat = as.matrix(tx.salmon$length)
+```
+
+```{r}
+#head(countsMat)
+```
+
+
+
+
+
+
+

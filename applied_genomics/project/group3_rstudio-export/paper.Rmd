@@ -1,0 +1,597 @@
+---
+title: "paper"
+author: "Chandana"
+date: "5/2/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r eval=F}
+install.packages("readxl")
+library(readxl)
+```
+
+```{r}
+# reading the count matrix from GEO of the paper
+rawcounts = read_excel(
+  "/scratch/work/courses/AppliedGenomicsSec3/groups/group3/for-deg/tximport//rawcounts.xlsx", 
+  col_names = T)
+rawcounts = as.data.frame(rawcounts)
+dim(rawcounts)
+```
+
+```{r}
+# rownames as genes
+rows_rawcounts= rawcounts$...1
+rownames(rawcounts) = rows_rawcounts
+rawcounts$...1 <- NULL
+dim(rawcounts)
+```
+
+```{r}
+#info = read.table("info.tsv", sep = '\t', header=T)
+head(info)
+```
+
+```{r}
+# subset the data for only selected 36 samples based on App.Genomics project
+keep = info$Sample.ID
+rawcounts = rawcounts[,keep]
+dim(rawcounts)
+```
+
+# DE analysis using edgeR and limma:voom
+```{r}
+# loading packages
+library(edgeR)
+library(limma)
+library(dplyr)
+```
+
+
+```{r}
+# making DGE list using edgeR
+dge_lit = DGEList(counts=rawcounts, remove.zeros = T)
+dge_lit$samples
+```
+
+
+```{r}
+# creating factors for design matrix
+#shock = substr(info$Col_names, 1, nchar(info$Col_names)-6)
+#time = substr(info$Col_names, nchar(info$Col_names)-1, nchar(info$Col_names))
+rownames(grp) = rownames(dge_lit$samples)
+head(grp)
+```
+```{r}
+group_lit = interaction(shock, time)
+group_lit
+```
+
+
+
+```{r}
+design = model.matrix(~0+group_lit)
+#design
+```
+
+```{r}
+# filtering lowly expressed genes
+keep = filterByExpr(dge_lit, design)
+dge_lit = dge_lit[keep,,keep.lib.sizes=FALSE]
+dim(dge_lit$counts)
+```
+
+## Voom: Limma
+```{r}
+#jpeg("voom_lit.jpg")
+v.lit = voom(dge_lit, design, plot=TRUE, normalize="quantile")
+#dev.off()
+```
+
+```{r}
+# Plotting MDS
+#jpeg("mds_lit.jpg")
+plotMDS(v.lit, labels=paste(shock,time, sep="|"))
+#dev.off()
+```
+
+
+
+```{r}
+# fitting the design to a linear model and
+# performing emperical Bayes on the fit
+fit_lit = lmFit(v, design)
+fit_lit = eBayes(fit_lit)
+dim(fit_lit)
+```
+
+```{r}
+# Extracting a table of the top-ranked genes from the linear model fit
+top.table_lit = topTable(fit_lit, adjust.method = "BH", sort.by = "none", n = Inf)
+head(top.table_lit, 20)
+```
+
+```{r}
+# within groups at different time T3 vs T1
+contrasts_lit = makeContrasts(#CST2_T1 = group_litCS.T2 - group_litCS.T1,
+                          CST3_T1 = group_litCS.T3 - group_litCS.T1,
+                          #CST3_T2 = group_litCS.T3 - group_litCS.T2,
+                          #SST2_T1 = group_litSS.T2 - group_litSS.T1,
+                          SST3_T1 = group_litSS.T3 - group_litSS.T1,
+                          #SST3_T2 = group_litSS.T3 - group_litSS.T2,
+                          levels = colnames(fit_lit))
+```
+
+```{r}
+fit_lit.contrast = contrasts.fit(fit_lit, contrasts_lit)
+fit_lit.contrast = eBayes(fit_lit.contrast)
+```
+
+```{r}
+top.table_lit.con = topTable(fit_lit.contrast,  adjust="BH", n=Inf)
+head(top.table_lit.con, 20)
+```
+```{r}
+summary(decideTests(fit_lit.contrast))
+```
+
+```{r}
+length(which(top.table_lit.con$adj.P.Val < 0.05))
+```
+
+```{r}
+length(which(top.table_lit.con$adj.P.Val < 0.01))
+```
+
+
+```{r}
+diffexpgenes_lit.time = subset(top.table_lit, adj.P.Val < 0.05)
+nc_lit.time = cpm(dge_lit, normalized.lib.sizes=FALSE)
+diffexpgenes_df.time = as.data.frame(diffexpgenes_lit.time)
+diffexpvalues_lit.time = nc_lit.time[rownames(nc_lit.time) %in% 
+                                       rownames(diffexpgenes_df.time), ]
+#head(diffexpvalues_lit.time)
+
+```
+
+# Hierarchical clustering
+```{r}
+dist.lit = dist(diffexpgenes_df.time)
+tree.lit = hclust(dist.lit)
+clusters.lit = cutree(tree.lit,k = 8)
+clusters_df.lit = as.data.frame(clusters.lit)
+
+group_by(clusters_df.lit, clusters.lit) %>% summarize(count=n())
+```
+
+```{r}
+# Pairwise correlation between samples (columns)
+cols.cor.lit <- cor(diffexpvalues_lit.time, use = "pairwise.complete.obs", method = "pearson")
+# Pairwise correlation between rows (genes)
+rows.cor.lit <- cor(t(diffexpvalues_lit.time), use = "pairwise.complete.obs", method = "pearson")
+
+# Plot the heatmap
+library("pheatmap")
+
+jpeg("pheatmap_lit.jpg")
+
+pheatmap(
+  diffexpvalues_lit.time, scale = "row", 
+  clustering_distance_cols = as.dist(1 - cols.cor.lit),
+  clustering_distance_rows = as.dist(1 - rows.cor.lit),
+  cluster_rows = TRUE, 
+  annotation_col= grp, 
+  annotation_row= clusters_df.lit,
+  show_rownames = F
+  )
+
+dev.off()
+```
+# PCA
+```{r}
+data.prcomp.time = prcomp(t(diffexpvalues_lit.time), scale=TRUE, center=TRUE)
+data.prcomp.time$sdev
+```
+
+
+```{r}
+data.prcomp.time$rotation[1:6,1:6]
+```
+```{r}
+plot(data.prcomp.time)
+```
+
+```{r}
+summary(data.prcomp.time)
+```
+
+```{r}
+jpeg("pca.time_lit.jpg")
+library(ggplot2)
+coords2draw.time = as.data.frame(data.prcomp.time$x)
+coords2draw.time = cbind(coords2draw.time, sample_info)
+
+ggplot(coords2draw.time) +
+  geom_point(mapping=aes(x = PC1, y= PC2, 
+                         col=shock, shape=time))
+dev.off()
+```
+
+
+```{r}
+library(dplyr)
+dif_rows.time = c(rownames(diffexpgenes_df.time))
+difgenes_time= BMresults[BMresults$`Gene stable ID` %in% dif_rows.time, ]
+difgenes_time = distinct(difgenes_time, `NCBI gene (formerly Entrezgene) ID`)
+dim(difgenes_grp)
+difgenes_time = na.omit(difgenes_time)
+#head(difgenes_time)
+```
+
+```{r}
+# creating a list of parameters to be used in hyperGtest 
+params_lit.time = new('GOHyperGParams',
+             geneIds = difgenes_time, 
+             universeGeneIds = names(raw_genes), 
+             annotation = "org.Hs.eg.db", 
+             ontology = 'BP', 
+             pvalueCutoff = 0.001, 
+             testDirection = 'over')
+
+# creating hypergeometric object
+overBP_lit.time = (hyperGTest(params_lit.time))
+summary(overBP_lit.time)
+```
+
+
+### GOenrich analysis
+
+```{r eval=F}
+library(clusterProfiler)
+library(enrichplot)
+library(pathview)
+library(wordcloud)
+library(ggnewscale)
+library(ggupset)
+```
+
+```{r}
+go_enrich.time <- enrichGO(gene = difgenes_time,
+                      universe = names(raw_genes),
+                      OrgDb = organism, 
+                      keyType = 'ENTREZID',
+                      readable = T,
+                      ont = "BP",
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.10)
+```
+
+```{r}
+upsetplot(go_enrich.time)
+```
+```{r}
+wcdf.time<-read.table(text=go_enrich.time$GeneRatio, sep = "/")[1]
+wcdf.time$term<-go_enrich.time[,2]
+wordcloud(words = wcdf.time$term, freq = wcdf.time$V1, scale=(c(4, .1)), colors=brewer.pal(8, "Dark2"), max.words = 50)
+```
+
+
+
+########################################################################
+## 2) testing between groups at same time points
+```{r}
+# within shock groups 
+contrasts2 = makeContrasts(T.1 = group_litCS.T1 - group_litSS.T1,
+                          T.2 = group_litCS.T2 - group_litSS.T2,
+                          T.3 = group_litCS.T3 - group_litSS.T3,
+                          levels = colnames(fit_lit))
+
+contrasts2
+```
+
+```{r}
+fit2_lit = contrasts.fit(fit_lit, contrasts2)
+fit2_lit = eBayes(fit2_lit)
+
+top.table2_lit.con = topTableF(fit2_lit,  adjust="BH", n=Inf, lfc=0)
+head(top.table2_lit.con, 20)
+```
+
+```{r}
+length(which(top.table2_lit.con$adj.P.Val < 0.01 & top.table2_lit.con$log2FC <1))
+
+```
+
+```{r}
+# up and down diff. expressed genes for between groups
+res_t = decideTests(fit2_lit)
+summary(res_t)
+```
+
+```{r}
+vennDiagram(res_t, include = c("up", "down"))
+```
+
+
+```{r}
+volcanoplot(fit_lit.contrast, "CST2_T1", highlight = 10)
+```
+```{r}
+diffexpgenes_lit.grp = subset(top.table2_lit.con, adj.P.Val < 0.05)
+nc_lit.grp = cpm(dge_lit, normalized.lib.sizes=FALSE)
+diffexpgenes_df.grp = as.data.frame(diffexpgenes_lit.grp)
+diffexpvalues_lit.grp = nc_lit.grp[rownames(nc_lit.grp) %in% 
+                                       rownames(diffexpgenes_df.grp), ]
+head(diffexpvalues_lit.grp)
+```
+## Hierarchical clustering
+
+```{r}
+dist.grp = dist(diffexpgenes_df.grp)
+tree.grp = hclust(dist.grp)
+clusters.grp = cutree(tree.grp,k = 8)
+clusters_df.grp = as.data.frame(clusters.grp)
+
+group_by(clusters_df.grp, clusters.grp) %>% summarize(count=n())
+```
+```{r}
+# Pairwise correlation between samples (columns)
+cols.cor.grp <- cor(diffexpvalues_lit.grp, use = "pairwise.complete.obs", 
+                    method = "pearson")
+# Pairwise correlation between rows (genes)
+rows.cor.grp <- cor(t(diffexpvalues_lit.grp), use = "pairwise.complete.obs", 
+                    method = "pearson")
+
+# Plot the heatmap
+#library("pheatmap")
+
+jpeg("pheatmap.grp_lit.jpg")
+
+pheatmap(
+  diffexpvalues_lit.grp, scale = "row", 
+  clustering_distance_cols = as.dist(1 - cols.cor.grp),
+  clustering_distance_rows = as.dist(1 - rows.cor.grp),
+  cluster_rows = TRUE, 
+  annotation_col= grp, 
+  annotation_row= clusters_df.grp,
+  show_rownames = F
+  )
+
+dev.off()
+```
+
+## PCA
+
+```{r}
+data.prcomp.grp = prcomp(t(diffexpvalues_lit.grp), scale=TRUE, center=TRUE)
+data.prcomp.grp$sdev
+```
+
+
+```{r}
+dim(diffexpgenes_lit.grp)
+```
+
+
+```{r}
+data.prcomp.grp$rotation[1:6,1:6]
+```
+
+```{r}
+plot(data.prcomp.grp)
+```
+```{r}
+summary(data.prcomp.grp)
+```
+
+```{r}
+#jpeg("pca.grp_lit.jpg")
+library(ggplot2)
+coords2draw.grp = as.data.frame(data.prcomp.grp$x)
+coords2draw.grp = cbind(coords2draw.grp, sample_info)
+
+ggplot(coords2draw.grp) +
+  geom_point(mapping=aes(x = PC1, y= PC2, 
+                         col=shock, shape=time))
+#dev.off()
+```
+
+```{r}
+go_enrich.grp <- enrichGO(gene = difgenes_grp,
+                      universe = names(raw_genes),
+                      OrgDb = organism, 
+                      keyType = 'ENTREZID',
+                      readable = T,
+                      ont = "BP",
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.10)
+
+#upsetplot(go_enrich.grp)
+```
+
+```{r}
+barplot(go_enrich.grp, 
+        drop = TRUE, 
+        showCategory = 10, 
+        title = "GO Biological Pathways",
+        font.size = 8)
+```
+
+
+
+
+
+
+```{r}
+length(intersect(dif_salmon$`Gene stable ID`, rownames(diffexpgenes_lit.grp)))
+```
+
+```{r}
+cols = colnames(diffexpgenes_df)
+colnames(diffexpgenes_df.grp) = cols
+head(diffexpgenes_df.grp)
+```
+```{r}
+which(rownames(diffexpgenes_df)=="ENSG00000160255")
+```
+
+```{r}
+head(rownames(diffexpgenes_df))
+```
+
+```{r}
+dim(diffexpgenes_df.grp)
+```
+
+```{r}
+universal_genes = BMresults[BMresults$`Gene stable ID` %in% rows_rawcounts, ]
+universal_genes = universal_genes$`NCBI gene (formerly Entrezgene) ID`
+head(universal_genes)
+```
+
+
+```{r}
+dif_rows.grp = c(rownames(diffexpgenes_df.grp))
+difgenes_grp = BMresults[BMresults$`Gene stable ID` %in% dif_rows.grp, ]
+difgenes_grp = distinct(difgenes_grp, `NCBI gene (formerly Entrezgene) ID`)
+dim(difgenes_grp)
+```
+
+```{r}
+difgenes_grp = na.omit(difgenes_grp)
+write.table(difgenes_grp, file = "difgenes_grp.txt" , sep = " ", row.names = F)
+```
+
+
+```{r}
+difgenes_grp$`NCBI gene (formerly Entrezgene) ID`
+```
+
+```{r}
+head(top.table_lit.con)
+```
+```{r}
+
+```
+
+
+```{r}
+params.lit.grp = new('GOHyperGParams',
+             geneIds = difgenes_grp$`NCBI gene (formerly Entrezgene) ID`, 
+             universeGeneIds = universal_genes, 
+             annotation = "org.Hs.eg.db", 
+             ontology = 'BP', 
+             pvalueCutoff = 0.001, 
+             testDirection = 'over')
+
+overBP.lit.grp = (hyperGTest(params.lit.grp))
+summary(overBP.lit.grp)
+```
+```{r}
+length(overBP.lit.grp@geneIds)
+```
+
+```{r}
+length(intersect(overBP@geneIds, overBP.lit.grp@geneIds))
+```
+
+### fetching Entrez IDs for genes associated with GO enriched terms
+```{r}
+GO_genes.grp = geneIdsByCategory(overBP.lit.grp)
+```
+
+```{r}
+GO0006334 = GO_genes.grp$`GO:0006334`
+```
+
+```{r}
+GO0006334_genes = BMresults[BMresults$`NCBI gene (formerly Entrezgene) ID` %in% 
+                        GO0006334,]
+
+```
+
+
+```{r}
+GO0006334 = na.omit(GO0006334)
+GO0006334 = as.character(GO0006334)
+GO0006334.grp_ids = getSYMBOL(GO0006334, data='org.Hs.eg')
+```
+
+```{r}
+GO0002376.grp = GO_genes.grp$`GO:0002376`
+GO0002376.grp = na.omit(GO0002376.grp)
+GO0002376.grp = as.character(GO0002376.grp)
+```
+
+
+```{r}
+GO0002376.grp_ids = getSYMBOL(GO0002376.grp, data='org.Hs.eg')
+```
+
+```{r}
+intersect(GO0002376.grp_ids, GO0002376_ids)
+```
+
+```{r}
+intersect(GO0006334.grp_ids, GO0006334.s_ids)
+```
+
+```{r}
+length(GO0002376.grp_ids)
+```
+
+```{r}
+GO0006959.grp = GO_genes.grp$`GO:0006959`
+GO0006959.grp = na.omit(GO0006959.grp)
+GO0006959.grp = as.character(GO0006959.grp)
+```
+
+```{r}
+GO0006959.grp_ids = getSYMBOL(GO0006959.grp, data='org.Hs.eg')
+```
+
+
+
+```{r}
+intersect(GO0006959.grp_ids, GO0006959_ids)
+```
+
+
+
+########################################
+```{r}
+fit2_rows = rownames(fit2_lit)
+fit2_rows = gsub('\\.[0-9]*$', '', fit2_rows)
+head(fit2_rows)
+```
+
+```{r}
+rownames(fit2_lit$coefficients) = fit2_rows
+rownames(fit2_lit$stdev.unscaled) = fit2_rows
+
+
+rownames(fit2_lit$t) = fit2_rows
+rownames(fit2_lit$p.value) = fit2_rows
+rownames(fit2_lit$lods) = fit2_rows
+length(rownames(fit2_lit))
+```
+
+```{r}
+g2 = goana(c(fit2_lit.entrez), coef=3, species="Hs", geneid = "EntrezID", FDR = 0.05, trend=T)
+topGO(g2,n=20,truncate="50")
+```
+
+```{r}
+#library(ChIPpeakAnno)
+library(org.Hs.eg.db)
+fit2_lit.entrez = convert2EntrezID(rownames(fit2_lit), orgAnn="org.Hs.eg.db", ID_type = "ensembl_gene_id")
+```
+
+```{r}
+type(fit2_lit.entrez)
+```
+

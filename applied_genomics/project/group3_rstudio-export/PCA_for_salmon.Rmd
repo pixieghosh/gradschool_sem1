@@ -1,0 +1,61 @@
+---
+title: "PCA&heatmap"
+author: "Chandana"
+date: "4/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+head(diffexpvalues)
+```
+
+```{r}
+expvalues = top.table3[1:6]
+dim(expvalues)
+```
+
+```{r}
+#data.prcomp = prcomp(t(expvalues), scale=TRUE, center=TRUE)
+data.prcomp = prcomp(t(diffexpvalues), scale=TRUE, center=TRUE)
+data.prcomp$sdev
+```
+
+```{r}
+data.prcomp$rotation[1:6,1:6]
+```
+
+```{r}
+plot(data.prcomp)
+```
+```{r}
+summary(data.prcomp)
+```
+
+```{r eval=FALSE}
+library(dplyr)
+```
+
+```{r}
+timepoints = c("groupCS.T1", "groupSS.T1", "groupCS.T2", "groupSS.T2",
+               "groupCS.T3", "groupSS.T3")
+```
+
+
+
+
+```{r}
+#jpeg("pca.jpg")
+library(ggplot2)
+coords2draw = as.data.frame(data.prcomp$x)
+coords2draw = cbind(coords2draw, sample_info)
+
+ggplot(coords2draw) +
+  geom_point(mapping=aes(x = PC1, y= PC2, 
+                         col=shock, shape=time))
+#dev.off()
+```
+

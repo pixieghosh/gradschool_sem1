@@ -1,0 +1,219 @@
+---
+title: "bioaRt"
+author: "Chandana"
+date: "4/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(biomaRt)
+```
+
+```{r}
+# listing available marts
+listMarts()
+```
+
+```{r}
+# storing ensembl mart to be used in a variable
+ensembl=useMart("ENSEMBL_MART_ENSEMBL")
+```
+
+```{r}
+ens_datasets = listDatasets(ensembl)
+```
+
+```{r}
+grep(pattern = "sapiens", x = ens_datasets$dataset, ignore.case = T, value = T)
+```
+
+```{r}
+# using ensemble data set for Homo Sapiens
+hg38=useDataset("hsapiens_gene_ensembl", mart=ensembl)
+```
+
+```{r}
+# what attributes are available in H.sapine dataset?
+hg38Attributes = listAttributes(hg38)
+head(hg38Attributes)
+```
+
+
+```{r}
+grep("version", hg38Attributes$name, ignore.case = T, value = T)
+```
+
+```{r}
+BMresults = getBM(attributes=c("ensembl_gene_id",
+                               #"ensembl_gene_id_version",
+                               "entrezgene_id",
+                               "description",
+                               "interpro"),
+                  #filters=c("chromosome_name","transcript_gencode_basic"), 
+                  values = 1,
+                  mart=hg38, bmHeader = T)
+```
+
+```{r}
+bmresults = getBM(attributes=c("ensembl_gene_id",
+                               "entrezgene_id",
+                               "ensembl_gene_id_version"),
+                  #filters=c("chromosome_name"), 
+                  values = fit_rows,
+                  mart=hg38, bmHeader = T)
+
+dim(bmresults)
+```
+
+
+
+```{r}
+head(BMresults)
+```
+
+```{r}
+res = "ENSG00000000003.15" %in% BMresults$`Gene stable ID version`
+res = BMresults["ENSG00000000003.15",]
+res
+```
+
+
+```{r}
+BMresults[63473,]
+```
+
+```{r}
+rows = c(rownames(data))
+data_subset = BMresults[rows %in% BMresults$`Gene stable ID version`, ]
+dim(data_subset)
+```
+
+```{r}
+diff_genes = distinct(diff_subset, `NCBI gene (formerly Entrezgene) ID`)
+diff_genes = as.data.frame(diff_genes)
+dim(diff_genes)
+```
+
+```{r}
+data_genes = distinct(data_subset, `NCBI gene (formerly Entrezgene) ID`)
+data_genes = as.data.frame(data_genes)
+dim(data_genes)
+```
+
+```{r}  
+#fit_rows = rownames(fit3)
+
+fit_subset = bmresults[fit_rows %in% bmresults$`Gene stable ID`, ]# %>% distinct(`NCBI gene (formerly Entrezgene) ID`)
+dim(fit_subset)
+#length(intersect(fit_rows, fit_subset$`Gene stable ID version`))
+```
+```{r}
+same = intersect(rownames(fit3), fit_subset$`Gene stable ID version`)
+head(same)
+fit_sub = fit_subset[same %in% fit_subset$`Gene stable ID version`, ]
+fit_sub = distinct(fit_sub, `NCBI gene (formerly Entrezgene) ID`)
+#fit_sub = na.omit(fit_sub)
+dim(fit_sub)
+```
+
+
+```{r}
+length(same)
+```
+
+
+```{r}
+
+BMresults <- filter(BMresults, BMresults$`Gene stable ID version` %in% rows2) 
+```
+
+```{r}
+write.csv(diffexpvalues,"/scratch/work/courses/AppliedGenomicsSec3/groups/group3/for-deg/tximport//diffexpvalues.csv", row.names = T)
+```
+
+
+## paper
+```{r}
+head(rownames(rawcounts))
+```
+
+```{r}
+raw_subset = BMresults[BMresults$`Gene stable ID` %in% rows_rawcounts, ]
+raw_genes = raw_subset$`NCBI gene (formerly Entrezgene) ID`
+length(raw_genes)
+```
+
+```{r}
+dif_rows.time = c(rownames(diffexpgenes_df.time))
+difgenes_subset = BMresults[BMresults$`Gene stable ID` %in% dif_rows.time, ]
+difgenes_time = difgenes_subset$`NCBI gene (formerly Entrezgene) ID`
+length(difgenes_time)
+```
+
+```{r}
+dif_rows.grp = c(rownames(diffexpgenes_df.grp))
+difgenes_grp = BMresults[BMresults$`Gene stable ID` %in% dif_rows.grp, ]
+difgenes_grp = difgenes_grp$`NCBI gene (formerly Entrezgene) ID`
+length(difgenes_grp)
+```
+
+```{r}
+dim(diffexpgenes_df)
+```
+
+```{r}
+dif_rows = rownames(diffexpgenes_df)
+length(dif_rows)
+dif_salmon = BMresults[BMresults$`Gene stable ID version` %in% dif_rows, ]
+dif_salmon = distinct(dif_salmon, `NCBI gene (formerly Entrezgene) ID`)
+head(dif_salmon)
+```
+
+```{r}
+dif_salmon <- na.omit(dif_salmon)
+write.table(dif_salmon, file = "dif_salmon.txt" , sep = " ", row.names = F, col.names = F)
+```
+
+```{r}
+head(BMresults)
+```
+
+
+
+```{r}
+fit_rows = rownames(fit3)
+rownames(fit3) = gsub('\\.[0-9]*$', '', c(rownames(fit3)))
+#rownames(fit3)= c(fit_rows)
+#head(rownames(fit3))
+```
+
+```{r}
+fit_rows = as.data.frame(fit_rows)
+#head(fit_rows)
+rownames(fit3) <- fit_rows$fit_rows
+head(rownames(fit3))
+dim(top.table3)
+```
+```{r}
+rownames(fit3$coefficients) = fit_rows
+rownames(fit3$stdev.unscaled) = fit_rows
+
+
+rownames(fit3$t) = fit_rows
+rownames(fit3$p.value) = fit_rows
+rownames(fit3$lods) = fit_rows
+head(rownames(fit3))
+```
+
+```{r}
+head(fit_rows)
+```
+
+```{r}
+head(rownames(fit3))
+```
+
